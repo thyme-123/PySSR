@@ -1,0 +1,21 @@
+FREQ1 = 1.57542E9           #/* L1/E1  frequency (Hz) */
+FREQ2 = 1.22760E9           #/* L2     frequency (Hz) */
+FREQ5 = 1.17645E9           #/* L5/E5a frequency (Hz) */
+FREQ6 = 1.27875E9           #/* E6/LEX frequency (Hz) */
+FREQ7 = 1.20714E9           #/* E5b    frequency (Hz) */
+FREQ8 = 1.191795E9          #/* E5a+b  frequency (Hz) */
+FREQ9 = 2.492028E9          #/* S      frequency (Hz) */
+FREQ1_GLO = 1.60200E9           #/* GLONASS G1 base frequency (Hz) */
+DFRQ1_GLO = 0.56250E6           #/* GLONASS G1 bias frequency (Hz/n) */
+FREQ2_GLO = 1.24600E9           #/* GLONASS G2 base frequency (Hz) */
+DFRQ2_GLO = 0.43750E6           #/* GLONASS G2 bias frequency (Hz/n) */
+FREQ3_GLO = 1.202025E9          #/* GLONASS G3 frequency (Hz) */
+FREQ1_CMP = 1.561098E9          #/* BeiDou B1 frequency (Hz) */   // C2
+FREQ2_CMP = 1.20714E9           #/* BeiDou B2 frequency (Hz) */   // C7
+FREQ3_CMP = 1.26852E9           #/* BeiDou B3 frequency (Hz) */   // C6
+
+FREQ_B1_BDS3 = 1.57542E9   # C1
+FREQ_B2a_BDS3 = 1.17645E9   # C5
+FREQ_B3_BDS3 = 1.26852E9   # C6
+FREQ_B2b_BDS3 = 1.20714E9   # C7
+FREQ_B2_BDS3 = 1.191795E9  # C8
