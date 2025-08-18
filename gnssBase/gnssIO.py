@@ -123,7 +123,11 @@ def wirteRtClkHeader(f, mintime):
 
 def formatSplit(string, start, length, type="float"):
     s = string[start:start + length]
-    s = s.replace(" ","")
+    s = s.replace(" ","").replace("D", "E")
+    if len(s) == 0 and type == "string":
+        return ""
+    elif len(s) == 0:
+        return 0
     if type == "float":
         return float(s)
     elif type == "int":
@@ -299,7 +303,10 @@ def readNav(path, rnxData=None):
                 else:
                     toc = gnssTime.gnssTime(year=year, month=month, day=day, hour=hour, minute=minute, second=second)
                 if "E" in PRN and (not (dataSource & 0b100000000)):
-                    continue
+                    if dataSource == 0:
+                        pass
+                    else:
+                        continue
                 if toc not in times:
                     times.append(toc)
                 if rnxData.get(PRN, -1) == -1:
@@ -505,7 +512,7 @@ def readSp3(path):
                 y = float(data[2])
                 z = float(data[3])
                 clk = float(data[4]) * pow(10, 3)
-                if data[4] == "999999.999999":
+                if clk >= 999999.999999 * pow(10, 3):
                     line = file.readline()
                     continue
                 if sp3Data.get(prn, -1) == -1:

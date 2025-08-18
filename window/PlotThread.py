@@ -102,8 +102,10 @@ class PlotThread(QThread):
         for system in parent.systemHash:
             if parent.systemHash[system].isChecked():
                 systemCheck.append(system)
-        prns, times, diff, minTime, maxTime, logLines = gnssDiff_all(sp3Data, sp3TemplateData, parent, baseSatelliteData,
-                                                           systemCheck, navData, log=isLog, ignore=ignore)
+        prns, times, diff, minTime, maxTime, logLines = gnssDiff_bias(sp3Data, sp3TemplateData, parent,systemCheck,
+                                                                      navData, log=isLog, ignore=ignore)
+        # prns, times, diff, minTime, maxTime, logLines = gnssDiff_all(sp3Data, sp3TemplateData, parent, baseSatelliteData,
+        #                                                    systemCheck, navData, log=isLog, ignore=ignore)
         if isLog:
             sp3Log = os.path.join(logPath, "plot.log")
             with open(sp3Log, "w") as f:
@@ -117,11 +119,11 @@ class PlotThread(QThread):
             typ = typList[settingData["imgFormat"]]
             imgpath = os.path.join(imgPath, "{}_{}.{}".format(diffName, "".join(systemCheck), typ))
             if diffName == "CLK":
-                gnssPlotScatter(times, diff[diffName], prns, figTitle, imgpath, noTitle=noTitle, noLenged=noLenged,
+                gnssPlotScatter(times, diff["CLK_pre"], prns, figTitle, imgpath, noTitle=noTitle, noLenged=noLenged,
                                 xlabel="Times(second)",
                                 ylabel="diff(ns)", xlim=[minTime, maxTime], format=settingData["imgFormat"], 
                                 dpi=dpi)
-                gnssPlotBar(diff[diffName], prns, "CLK STD {}".format("".join(systemCheck)), os.path.join(imgPath,
+                gnssPlotBar(diff["CLK_pre"], prns, "CLK STD {}".format("".join(systemCheck)), os.path.join(imgPath,
                                                                                                           "{}_STD {}.{}".format(
                                                                                                               diffName,
                                                                                                               "".join(systemCheck),

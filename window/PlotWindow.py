@@ -128,14 +128,14 @@ class PlotWindow(QWidget):
         self.gloCheck = QCheckBox(self)
         self.gloCheck.setText("GLO")
         self.gloCheck.move(700, 120)
-        self.dbsCheck = QCheckBox(self)
-        self.dbsCheck.setText("DBS")
-        self.dbsCheck.move(750, 120)
+        self.bdsCheck = QCheckBox(self)
+        self.bdsCheck.setText("BDS")
+        self.bdsCheck.move(750, 120)
         self.systemHash = {
             "G": self.gpsCheck,
             "E": self.galCheck,
             "R": self.gloCheck,
-            "C": self.dbsCheck,
+            "C": self.bdsCheck,
         }
         # thread
         self.thread = PlotThread(self)
