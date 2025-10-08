@@ -34,7 +34,7 @@ def getSp3Header(satellites, mintime, epoch):
     s = "+  {:0>3}   ".format(satellitesNumber)
     i = 0
     j = 0
-    while i < satellitesNumber:
+    while i < len(satellites):
         s += satellites[i]
         i += 1
         if i % 17 == 0 and i != 0:

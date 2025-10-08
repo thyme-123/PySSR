@@ -12,13 +12,13 @@ This Python toolbox is designed for broadcast ephemeris merging and SSR data int
 ## **Install**
 ### **window**
 ```shell
-git clone https://github.com/
+git clone https://github.com/thyme-123/PySSR
 cd PySSR
 ./install.bat
 ```
 ### **Linux**
 ```shell
-git clone https://github.com/
+git clone https://github.com/thyme-123/PySSR
 cd PySSR
 chmod +x install.sh
 bash ./install.sh
