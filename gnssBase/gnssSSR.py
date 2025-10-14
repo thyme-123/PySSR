@@ -290,7 +290,8 @@ def noClkLine(rnxData, times):
     while startTime < mintime:
         startTime += datetime.timedelta(seconds=86400)
     outTime = startTime
-    for _ in range(24 * 60 * 2):  # 24小时,每5分钟
+    for _ in range(24 * 60 * 2):  # 24小时,每30秒
+        print(startTime)
         for satellite in rnxData:
             keys = sorted(list(rnxData[satellite].keys()))
             for index in range(len(keys)):
@@ -300,10 +301,12 @@ def noClkLine(rnxData, times):
             data = rnxData[satellite][toc]
             if satellite.startswith("C"):
                 X, Y, Z, clk, Vx, Vy, Vz = DBSPosition(data, startTime, toc, prn=satellite)
-            elif satellite.startswith("C"):
+            elif satellite.startswith("R"):
                 X, Y, Z, clk, Vx, Vy, Vz = glonassPosition(data, startTime, toc)
-            else:
+            elif satellite.startswith("G") or satellite.startswith("E"):
                 X, Y, Z, clk, Vx, Vy, Vz = GPSPosition(data, startTime, toc, prn=satellite)
+            else:
+                continue
             lines.append(
                 "AS {PRN:3}  {year:>4} {month:>2} {day:>2} {hour:>2} {minute:>2} {second:>9}  1   {clk:>19}\n".format(
                     PRN=satellite,
