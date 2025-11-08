@@ -17,7 +17,7 @@ AS2R = ((3.1415926535897932 / 180.0) / 3600.0)
 
 frequency = {
         "G": {1: FREQ1, 2: FREQ2, 5: FREQ5},
-        "R": {3: FREQ3_GLO, 1: 0, 2: 0},
+        "R": {3: FREQ3_GLO, 1: 1.60200E9, 2: 1.24600E9},
         "E": {1: FREQ1, 5: FREQ5, 6: FREQ6, 7: FREQ7, 8: FREQ8,},
         "C": {1: FREQ_B1_BDS3, 2: FREQ1_CMP, 5: FREQ_B2a_BDS3, 6: FREQ_B3_BDS3, 7: FREQ_B2b_BDS3, 8: FREQ_B2_BDS3},
     }
@@ -224,7 +224,7 @@ def eci2ecef(utct,rs):
     gpst = utc2gpst(utct)
     t = (timeDiff(gpst, ep2000) + 19.0 + 32.184) / 86400.0 / 36525.0
     f = [0, 0, 0, 0, 0]
-    tt = [pow(t,i) for i in range(1,5)]
+    tt = [pow(t, i) for i in range(1, 5)]
     for i in range(5):
         f[i] = fc[i][0] * 3600.0
         for j in range(4):
@@ -239,7 +239,7 @@ def eci2ecef(utct,rs):
     ze = (2306.2181 * t + 0.30188 * pow(t,2) + 0.017998 * pow(t,3)) * AS2R
     th = (2004.3109 * t - 0.42665 * pow(t,2) - 0.041833 * pow(t,3)) * AS2R
     z = (2306.2181 * t + 1.09468 * pow(t,2) + 0.018203 * pow(t,3)) * AS2R
-    eps = (84381.448 - 46.8150 * t - 0.00059 * pow(t,2) + 0.001813 * pow(t,3)) * AS2R
+    eps = (84381.448 - 46.8150 * t - 0.00059 * pow(t, 2) + 0.001813 * pow(t, 3)) * AS2R
     R1 = Rz(-z)
     R2 = Ry(th)
     R3 = Rz(-ze)
@@ -261,7 +261,7 @@ def eci2ecef(utct,rs):
     sect = utct
     sec = sect.hour * 3600 + sect.minute * 60 + sect.second
     #sec = timeDiff(utct,datetime(1970,1,1))
-    day = datetime.datetime(sect.year,sect.month,sect.day)
+    day = datetime.datetime(sect.year, sect.month, sect.day)
     t1 = timeDiff(day, ep2000) / 86400.0 / 36525.0
     t2 = t1 * t1
     t3 = t2 * t1
@@ -281,13 +281,13 @@ def eci2ecef(utct,rs):
     return np.dot(U_.T,rs)
 
 def sumPosition(t):
-    sum_eci = np.array([0,0,0],dtype=np.float64)
+    sum_eci = np.array([0, 0, 0], dtype=np.float64)
     tu = gpst2utc(t)
     # astronomical arguments
     #temp = timeDiff(tu, datetime(2000, 1, 1, 12, 0, 0))
     # tk = timeDiff(tu,datetime(2000, 1, 1, 12, 0, 0)) / 86400.0 / 36525.0
     temp = timeDiff(tu, datetime.datetime(2000, 1, 1, 12, 0, 0))
-    tk = timeDiff(tu,datetime.datetime(2000, 1, 1, 12, 0, 0)) / 86400.0 / 36525.0
+    tk = timeDiff(tu, datetime.datetime(2000, 1, 1, 12, 0, 0)) / 86400.0 / 36525.0
     f = [0, 0, 0, 0, 0]
     tt = [pow(tk,i) for i in range(1,5)]
     for i in range(5):
@@ -323,6 +323,10 @@ def satposs(prn, gtime, rx, neu1, neu2=None, frq=None):
         lam0, lam1 = getLam(system, frq)
     elif system == "E":
         lam0, lam1 = getLam(system, frq)
+    elif system == "C":
+        lam0, lam1 = getLam(system, frq)
+    else:
+        lam0, lam1 = getLam(system, frq)
     rsun = sumPosition(gtime)
     ez = -1 * rx / np.linalg.norm(rx)
     es = rsun - rx
@@ -331,7 +335,7 @@ def satposs(prn, gtime, rx, neu1, neu2=None, frq=None):
     ey = ey / np.linalg.norm(ey)
     ex = np.cross(ey, ez)
     ex = ex / np.linalg.norm(ex)
-    gamma = pow(lam0,2) / pow(lam1,2)
+    gamma = pow(lam0, 2) / pow(lam1, 2)
     # C1 = gamma / (gamma - 1.0)
     # C2 = -1.0 / (gamma - 1.0)
     C1 = 1

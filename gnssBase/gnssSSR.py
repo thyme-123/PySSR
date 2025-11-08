@@ -1,4 +1,5 @@
 import datetime
+import os.path
 from math import *
 from datetime import *
 
@@ -603,7 +604,28 @@ def clkLines(rnxData, times, cData, mod=False, log=False):
     return lines, ansTime, logLines
 
 def repairSp3(outPath ,navPath, ssrPath, atxPath=None):
-    pass
+    for nav in navPath:
+        assert os.path.isfile(nav), "not nav path"
+    assert os.path.isfile(ssrPath), "not ssr path"
+    rnxData = None
+    for nav in navPath:
+        rnxData, times = readNav(nav, rnxData)
+    cData, sData, times = readSSR(ssrPath)
+    atxData = None
+    if os.path.isfile(atxPath):
+        atxData = readATX(atxPath)
+    lines, outTime, satellites, epoch, logLines = sp3Lines(rnxData, times, cData, sData, atxData, mod=False)
+    writeSp3(outPath, lines, outTime, satellites, epoch)
+    return
 
-def repairClk(outPath ,navPath, ssrPath, atxPath=None):
-    pass
+def repairClk(outPath ,navPath, ssrPath):
+    for nav in navPath:
+        assert os.path.isfile(nav), "not nav path"
+    assert os.path.isfile(ssrPath), "not ssr path"
+    rnxData = None
+    for nav in navPath:
+        rnxData, times = readNav(nav, rnxData)
+    cData, sData, times = readSSR(ssrPath)
+    lines, ansTime, logLines = clkLines(rnxData, times, cData)
+    writeClk(outPath, lines, ansTime)
+    return
