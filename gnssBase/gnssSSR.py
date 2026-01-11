@@ -467,7 +467,7 @@ def sp3Lines(rnxData, times, cData, sData, atxData=None, mod=False, log=False):
                         validFROM = atxdata["validFROM"]
                         validUNTIL = atxdata["validUNTIL"]
                         frequencyData = atxdata["frequencyData"]
-                        if timeSub(validUNTIL, startTime) > 0:
+                        if timeDiff(validUNTIL, startTime) > 0:
                             if satellite[0] == "G":
                                 frequency1 = "G01"
                                 frequency2 = "G02"

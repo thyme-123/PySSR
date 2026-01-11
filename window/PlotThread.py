@@ -102,7 +102,7 @@ class PlotThread(QThread):
         for system in parent.systemHash:
             if parent.systemHash[system].isChecked():
                 systemCheck.append(system)
-        prns, times, diff, minTime, maxTime, logLines = gnssDiff_bias(sp3Data, sp3TemplateData, parent,systemCheck,
+        prns, times, diff, minTime, maxTime, logLines = gnssDiff_bias(sp3Data, sp3TemplateData, parent, systemCheck,
                                                                       navData, log=isLog, ignore=ignore)
         # prns, times, diff, minTime, maxTime, logLines = gnssDiff_all(sp3Data, sp3TemplateData, parent, baseSatelliteData,
         #                                                    systemCheck, navData, log=isLog, ignore=ignore)

@@ -469,22 +469,23 @@ def gnssDiff_bias(sp3Data, sp3TemplateData, parent, systems=[], navData=None, ig
             diffSISRE[prn] = compute_SISRE(diffR[prn], diffS[prn], diffW[prn], diffClk[prn], prn)
     for prn in prns:
         for i in range(len(times_date[prn])):
-            flag = diffx < 1 and diffy < 1 and diffz < 1 and diffClk[prn][-1] < 1
+            flag = diffX[prn][i] < 1 and diffY[prn][i] < 1 and diffZ[prn][i] < 1 and diffClk[prn][i] < 1
             if navData:
-                flag = flag and diffR[prn][-1] < 1 and diffS[prn][-1] < 1 and diffW[prn][-1] < 1
-            logLine.append("{prn} {time} {x} {y} {z} {R} {A} {C} {clk1} {clk2} {flag}\n".format(
-                prn=prn,
-                time=times_date[prn][i],
-                x=diffX[prn][i],
-                y=diffY[prn][i],
-                z=diffZ[prn][i],
-                R=diffR[prn][i] if navData else "NAN",
-                A=diffS[prn][i] if navData else "NAN",
-                C=diffW[prn][i] if navData else "NAN",
-                clk1=diffClk[prn][i],
-                clk2=diffClk_pre[prn][i],
-                flag="" if flag else "*",
-            ))
+                flag = flag and diffR[prn][i] < 1 and diffS[prn][i] < 1 and diffW[prn][i] < 1
+            logLine.append(
+                "{prn} {time} {x:>12} {y:>12} {z:>12} {R:>12} {A:>12} {C:>12} {clk1:>12} {clk2:>12} {flag}\n".format(
+                    prn=prn,
+                    time=times_date[prn][i],
+                    x="{:.3f}".format(diffX[prn][i]),
+                    y="{:.3f}".format(diffY[prn][i]),
+                    z="{:.3f}".format(diffZ[prn][i]),
+                    R="{:.3f}".format(diffR[prn][i]) if navData else "NAN",
+                    A="{:.3f}".format(diffS[prn][i]) if navData else "NAN",
+                    C="{:.3f}".format(diffW[prn][i]) if navData else "NAN",
+                    clk1="{:.3f}".format(diffClk[prn][i]),
+                    clk2="{:.3f}".format(diffClk[prn][i]),
+                    flag="" if flag else "*",
+                ))
     if mod == "sod":
         minTime, maxTime = findTimeLimit(times_sod)
     else:
@@ -628,17 +629,17 @@ def gnssDiff_all(sp3Data, sp3TemplateData, parent, basePrns,
                 flag = diffx < 1 and diffy < 1 and diffz < 1 and diffClk[prn][-1] < 1
                 if navData:
                     flag = flag and diffR[prn][-1] < 1 and diffS[prn][-1] < 1 and diffW[prn][-1] < 1
-                logLine.append("{prn} {time} {x} {y} {z} {R} {A} {C} {clk1} {clk2} {flag}\n".format(
+                logLine.append("{prn} {time} {x:>12} {y:>12} {z:>12} {R:>12} {A:>12} {C:>12} {clk1:>12} {clk2:>12} {flag}\n".format(
                     prn=prn,
                     time=date,
-                    x=diffx,
-                    y=diffy,
-                    z=diffz,
-                    R=diffR[prn][-1] if navData else "NAN",
-                    A=diffS[prn][-1] if navData else "NAN",
-                    C=diffW[prn][-1] if navData else "NAN",
-                    clk1=sp3Clk - templateClk,
-                    clk2=diffClk[prn][-1],
+                    x="{:.3f}".format(diffx),
+                    y="{:.3f}".format(diffy),
+                    z="{:.3f}".format(diffz),
+                    R="{:.3f}".format(diffR[prn][-1]) if navData else "NAN",
+                    A="{:.3f}".format(diffS[prn][-1]) if navData else "NAN",
+                    C="{:.3f}".format(diffW[prn][-1]) if navData else "NAN",
+                    clk1="{:.3f}".format(sp3Clk - templateClk),
+                    clk2="{:.3f}".format(diffClk[prn][-1]),
                     flag="" if flag else "*",
                 ))
         if navData:
@@ -773,3 +774,49 @@ def gnssDiff_dateTIme(sp3Data, sp3TemplateData, parent, basePrns,
         "C Position": diffW,
     }
     return prns, times, diff, minTime, maxTime
+
+def plotMain(sp3InputPath, sp3TemplatePath, positonList, navPathList, systemCheck, imgPath, dpi=600,
+             noTitle=False, noLenged=False, ignore=[], imgFormat="tif", logPath=None):
+    sp3Data = readSp3(sp3InputPath)
+    sp3TemplateData = readSp3(sp3TemplatePath)
+    navData = {}
+    isLog = False
+    if logPath:
+        isLog = True
+    for navPath in navPathList:
+        navData, times = readNav(navPath, navData)
+    prns, times, diff, minTime, maxTime, logLines = gnssDiff_bias(sp3Data, sp3TemplateData, None, systemCheck,
+                                                                  navData, log=isLog, ignore=ignore)
+    # prns, times, diff, minTime, maxTime, logLines = gnssDiff_all(sp3Data, sp3TemplateData, parent, baseSatelliteData,
+    #                                                    systemCheck, navData, log=isLog, ignore=ignore)
+    if isLog:
+        sp3Log = os.path.join(logPath, "plot.log")
+        with open(sp3Log, "w") as f:
+            for line in logLines:
+                f.write(line)
+    sp3InputName = os.path.basename(sp3InputPath)
+    sp3TemplateName = os.path.basename(sp3TemplatePath)
+    baseTitle = "{} diff {} {}".format(sp3InputName, sp3TemplateName, "{}", "".join(systemCheck))
+    for diffName in positonList:
+        figTitle = baseTitle.format(diffName)
+        typ = imgFormat
+        imgpath = os.path.join(imgPath, "{}_{}.{}".format(diffName, "".join(systemCheck), typ))
+        if diffName == "CLK":
+            gnssPlotScatter(times, diff["CLK_pre"], prns, figTitle, imgpath, noTitle=noTitle, noLenged=noLenged,
+                            xlabel="Times(second)",
+                            ylabel="diff(ns)", xlim=[minTime, maxTime], format=imgFormat,
+                            dpi=dpi)
+            gnssPlotBar(diff["CLK_pre"], prns, "CLK STD {}".format("".join(systemCheck)), os.path.join(imgPath,
+                                                                                                       "{}_STD {}.{}".format(
+                                                                                                           diffName,
+                                                                                                           "".join(
+                                                                                                               systemCheck),
+                                                                                                           typ)),
+                        noTitle=noTitle, xlabel="PRN",
+                        ylabel="std(ns)", format=imgFormat,
+                        dpi=dpi)
+        else:
+            gnssPlotScatter(times, diff[diffName], prns, figTitle, imgpath, noTitle=noTitle, noLenged=noLenged,
+                            xlabel="Times(second)",
+                            ylabel="diff(m)", xlim=[minTime, maxTime], format=imgFormat,
+                            dpi=dpi)
