@@ -91,7 +91,7 @@ class PlotWindow(QWidget):
         self.yCheck.setText("Y")
         self.yCheck.move(650, 40)
         self.zCheck = QCheckBox(self)
-        self.zCheck.setText("Y")
+        self.zCheck.setText("Z")
         self.zCheck.move(700, 40)
         self.pCheck = QCheckBox(self)
         self.pCheck.setText("3D")
