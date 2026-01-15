@@ -483,7 +483,7 @@ def gnssDiff_bias(sp3Data, sp3TemplateData, parent, systems=[], navData=None, ig
                     A="{:.3f}".format(diffS[prn][i]) if navData else "NAN",
                     C="{:.3f}".format(diffW[prn][i]) if navData else "NAN",
                     clk1="{:.3f}".format(diffClk[prn][i]),
-                    clk2="{:.3f}".format(diffClk[prn][i]),
+                    clk2="{:.3f}".format(diffClk_pre[prn][i]),
                     flag="" if flag else "*",
                 ))
     if mod == "sod":
