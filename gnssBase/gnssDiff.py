@@ -69,7 +69,7 @@ def compute_SISRE(diffR, diffA, diffC, diffCLK, prn):
             wR = weight_wR["BDS_MEO"]
             w2AC = weight_w2AC["BDS_MEO"]
     return np.sqrt(
-        pow(RMS(wR * arrayR - arrayClk * pow(10, -9) * c), 2) - w2AC * (RMS(arrayA * arrayA) + RMS(arrayC * arrayC))
+        pow(RMS(wR * arrayR - arrayClk * pow(10, -9) * c), 2) + w2AC * (RMS(arrayA * arrayA) + RMS(arrayC * arrayC))
     )
 
 
@@ -271,7 +271,7 @@ def gnssDiff(sp3Data, sp3TemplateData, parent, basePrn, system=None, navData=Non
         for date in sp3Data[prn]:
             if sp3TemplateData_prn.get(date, -1) == -1:
                 if parent != None:
-                    parent.printLogSignal.emit("{prn} lack time {time} in templateSp3".format(prn=prn, time=date))
+                    parent.printLogSignal.emit("{prn} lack time {time} in templateSp3\n".format(prn=prn, time=date))
                 continue
             sp3X = sp3Data_prn[date][0]
             sp3Y = sp3Data_prn[date][1]
@@ -399,7 +399,7 @@ def gnssDiff_bias(sp3Data, sp3TemplateData, parent, systems=[], navData=None, ig
                 parent.printLogSignal.emit(
                     "base {prn} lack in templateSp3".format(prn=prn))
             if log:
-                logLine.append("base {prn} lack in templateSp3".format(prn=prn))
+                logLine.append("base {prn} lack in templateSp3\n".format(prn=prn))
             continue
         sp3TemplateData_prn = sp3TemplateData[prn]
         sp3Data_prn = sp3Data[prn]
@@ -466,7 +466,7 @@ def gnssDiff_bias(sp3Data, sp3TemplateData, parent, systems=[], navData=None, ig
     process_clk(diffClkRed, diffClk_pre, diffR, times_date)
     if navData:
         for prn in prns:
-            diffSISRE[prn] = compute_SISRE(diffR[prn], diffS[prn], diffW[prn], diffClk[prn], prn)
+            diffSISRE[prn] = compute_SISRE(diffR[prn], diffS[prn], diffW[prn], diffClk_pre[prn], prn)
     for prn in prns:
         for i in range(len(times_date[prn])):
             flag = diffX[prn][i] < 1 and diffY[prn][i] < 1 and diffZ[prn][i] < 1 and diffClk[prn][i] < 1
@@ -554,7 +554,7 @@ def gnssDiff_all(sp3Data, sp3TemplateData, parent, basePrns,
         for date in sp3Data[prn]:
             if sp3TemplateData_prn.get(date, -1) == -1:
                 if log:
-                    logLine.append("{prn} lack time {time} in templateSp3".format(prn=prn, time=date))
+                    logLine.append("{prn} lack time {time} in templateSp3\n".format(prn=prn, time=date))
                 parent.printLogSignal.emit("{prn} lack time {time} in templateSp3".format(prn=prn, time=date))
                 continue
             sp3X = sp3Data_prn[date][0]
@@ -568,7 +568,7 @@ def gnssDiff_all(sp3Data, sp3TemplateData, parent, basePrns,
             templateClk = sp3TemplateData_prn[date][3]
             if sp3TemplateData.get(basePrns[system], -1) == -1:
                 if log:
-                    logLine.append("base {prn} lack in templateSp3".format(prn=basePrns[system], time=date))
+                    logLine.append("base {prn} lack in templateSp3\n".format(prn=basePrns[system], time=date))
                 print("base {prn} lack in templateSp3".format(prn=basePrns[system], time=date))
                 if parent:
                     parent.printLogSignal.emit("base {prn} lack in templateSp3".format(prn=basePrns[system], time=date))
@@ -583,14 +583,14 @@ def gnssDiff_all(sp3Data, sp3TemplateData, parent, basePrns,
             templateBaseClk = sp3TemplateData[basePrns[system]][date][3]
             if sp3Data.get(basePrns[system], -1) == -1:
                 if log:
-                    logLine.append("base {prn} lack in Sp3".format(prn=basePrns[system], time=date))
+                    logLine.append("base {prn} lack in Sp3\n".format(prn=basePrns[system], time=date))
                 print("base {prn} lack in Sp3".format(prn=basePrns[system], time=date))
                 if parent:
                     parent.printLogSignal.emit("base {prn} lack in Sp3".format(prn=basePrns[system], time=date))
                 continue
             if sp3Data[basePrns[system]].get(date, -1) == -1:
                 if log:
-                    logLine.append("base {prn} lack time {time} in Sp3".format(prn=basePrns[system], time=date))
+                    logLine.append("base {prn} lack time {time} in Sp3\n".format(prn=basePrns[system], time=date))
                 print("base {prn} lack time {time} in Sp3".format(prn=basePrns[system], time=date))
                 if parent:
                     parent.printLogSignal.emit("base {prn} lack time {time} in Sp3".format(prn=basePrns[system], time=date))
@@ -644,7 +644,6 @@ def gnssDiff_all(sp3Data, sp3TemplateData, parent, basePrns,
                 ))
         if navData:
             diffSISRE[prn] = compute_SISRE(diffR[prn], diffS[prn], diffW[prn], diffClk[prn], prn)
-            print(prn, diffSISRE)
         minTime, maxTime = findTimeLimit(times)
     diff = {
         "X Position": diffX,
@@ -721,7 +720,7 @@ def gnssDiff_dateTIme(sp3Data, sp3TemplateData, parent, basePrns,
                 continue
             templateBaseClk = sp3TemplateData[basePrns[system]][date][3]
             if sp3Data.get(basePrns[system], -1) == -1:
-                print("base {prn} lack in Sp3".format(prn=basePrns[system], time=date))
+                print("base {prn} lack in Sp3\n".format(prn=basePrns[system], time=date))
                 if parent:
                     parent.printLogSignal.emit("base {prn} lack in Sp3".format(prn=basePrns[system], time=date))
                 continue

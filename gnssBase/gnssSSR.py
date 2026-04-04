@@ -612,8 +612,9 @@ def repairSp3(outPath ,navPath, ssrPath, atxPath=None):
         rnxData, times = readNav(nav, rnxData)
     cData, sData, times = readSSR(ssrPath)
     atxData = None
-    if os.path.isfile(atxPath):
-        atxData = readATX(atxPath)
+    if atxPath:
+        if os.path.isfile(atxPath):
+            atxData = readATX(atxPath)
     lines, outTime, satellites, epoch, logLines = sp3Lines(rnxData, times, cData, sData, atxData, mod=False)
     writeSp3(outPath, lines, outTime, satellites, epoch)
     return
