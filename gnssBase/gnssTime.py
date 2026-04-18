@@ -33,6 +33,16 @@ def doy_to_time(year, doy):
     t = base + datetime.timedelta(doy - 1)
     return t
 
+def doy2datetime(year, doy):
+    base = datetime.datetime(year, 1, 1)
+    t = base + datetime.timedelta(doy - 1)
+    return t
+
+def doy_to_time(year, doy):
+    base = datetime.date(year, 1, 1)
+    t = base + datetime.timedelta(doy - 1)
+    return t
+
 def date2doy(dTime):
     year, doy = time2YearDoy(dTime)
     doy += (dTime.hour/24 + dTime.minute/(24*60) + dTime.second/(24*60*60))

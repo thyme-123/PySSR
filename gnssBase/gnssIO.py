@@ -9,7 +9,7 @@ def formatString(x):
     value = "{:-.12e}".format(x)
     return "{:>19}".format(value)
 
-def getSp3Header(satellites, mintime, epoch):
+def getSp3Header(satellites, mintime, epoch, fre=300):
     header = []
     JD = gnssTime.day2JD(mintime)
     week, day = gnssTime.time2WeekDay(mintime)
@@ -23,12 +23,14 @@ def getSp3Header(satellites, mintime, epoch):
         second=mintime.second,
         epoch=epoch,
     ))
-    header.append("## {week:>4} {weekSecond:>15}   300.00000000 {JD:>5} {JDS:>15}\n".format(
+    header.append("## {week:>4} {weekSecond:>15} {fre:>14} {JD:>5} {JDS:>15}\n".format(
         week=week,
         weekSecond=weekSecond,
+        fre="{:.8f}".format(fre),
         JD=int(JD),
         JDS=JD-int(JD),
     ))
+    satellites = sorted(satellites)
     satellitesNumber = len(satellites)
     satellites += ["   "] * (17 - satellitesNumber % 17)
     s = "+  {:0>3}   ".format(satellitesNumber)

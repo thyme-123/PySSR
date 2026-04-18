@@ -235,6 +235,42 @@ def selctToc(sData, rnxData, startTime, prn=None):
                     ans_t = t
     return ans_t
 
+def selectToc_sorted(sData, rnxData, startTime, hasData, prn):
+    left, right = 0, len(hasData) - 1
+    closest_idx = 0
+    min_diff = abs(timeSub(hasData[0], startTime))
+    while left <= right:
+        mid = (left + right) // 2
+        mid_time = hasData[mid]
+        diff = abs(timeSub(mid_time, startTime))
+        if diff < min_diff:
+            min_diff = diff
+            closest_idx = mid
+        if timeSub(mid_time, startTime) < 0:
+            left = mid + 1
+        else:
+            right = mid - 1
+    if min_diff >= 5:
+        return None, None
+    toc = hasData[closest_idx]
+    target_iod = sData[toc]["IOD"]
+    ans_t = None
+    min_diff = float('inf')
+    for t, r_data in rnxData.items():
+        if prn.startswith("C"):
+            iod = (time2WeekSeconds(t - timedelta(seconds=14)) / 720) % 240
+        elif prn.startswith("R"):
+            tMos = t - timedelta(seconds=18) + timedelta(seconds=3 * 3600)
+            iod = getDaySec(tMos) // 900
+        else:
+            iod = r_data["IOD"]
+        if iod == target_iod:
+            diff = abs(timeSub(t, startTime))
+            if diff < min_diff:
+                min_diff = diff
+                ans_t = t
+    return ans_t, toc
+
 
 def noSp3Line(rnxData, times):
     mintime = min(times)
@@ -321,8 +357,184 @@ def noClkLine(rnxData, times):
         startTime += datetime.timedelta(seconds=30)
     return lines, outTime
 
+def sp3Lines_sorted(rnxData, times, cData, sData, atxData=None, mod=False, log=False):
+    mintime = min(times)
+    tt = time.time()
+    lines = []
+    logLines = []
+    satellites = []
+    startTime = datetime.datetime(1980, 1, 6)
+    while startTime < mintime:
+        startTime += datetime.timedelta(seconds=86400)
+    outTime = startTime
+    epoch = 0
+    dataKeys = {}
+    hasCdata = {}
+    hasSdata = {}
+    for satellite in rnxData:
+        dataKeys[satellite] = sorted(list(rnxData[satellite].keys()))
+        if cData.get(satellite, None):
+            hasCdata[satellite] = sorted(list(cData[satellite].keys()))
+        if sData.get(satellite, None):
+            hasSdata[satellite] = sorted(list(sData[satellite].keys()))
+    for _ in range(24 * 12):  # 24小时,每5分钟
+        print(startTime)
+        lines.append("*  {year:4} {month:2} {day:2} {hour:2} {minute:2} {second:>11}\n".format(
+            year=startTime.year,
+            month=startTime.month,
+            day=startTime.day,
+            hour=startTime.hour,
+            minute=startTime.minute,
+            second="{:.8f}".format(startTime.second),
+        ))
+        if log:
+            logLines.append("> {year:4} {month:2} {day:2} {hour:2} {minute:2} {second:>11}\n".format(
+                year=startTime.year,
+                month=startTime.month,
+                day=startTime.day,
+                hour=startTime.hour,
+                minute=startTime.minute,
+                second="{:.8f}".format(startTime.second),
+            ))
+        linesTemp = []
+        for satellite in rnxData:
+            timeDifftoc = 0
+            if satellite.startswith("E"):
+                timeDifftoc = 60 * 60 * 6
+            else:
+                timeDifftoc = 60 * 60 * 6
+            keys = dataKeys[satellite]
+            for index in range(len(keys)):
+                if keys[index] >= startTime:
+                    break
+            toc = keys[index]
+            if satellite not in sData:
+                if log:
+                    logLines.append("{prn} not in ssr,skip\n".format(prn=satellite))
+                continue
+            toc, cdataTime = selectToc_sorted(sData[satellite], rnxData[satellite], startTime,
+                                              hasSdata[satellite], satellite)
+            toc2, sdataTime = selectToc_sorted(cData[satellite], rnxData[satellite], startTime,
+                                               hasCdata[satellite], satellite)
+            if not toc:
+                if log:
+                    logLines.append("{prn} not it nav,skip\n".format(prn=satellite))
+                continue
+            if abs(timeSub(startTime, toc)) > timeDifftoc:
+                if log:
+                    logLines.append("{prn} startTime and toc diff too big,skip\n".format(prn=satellite))
+                continue
+            data = rnxData[satellite][toc]
+            if satellite.startswith("C"):
+                X, Y, Z, clk, Vx, Vy, Vz = DBSPosition(data, startTime, toc, prn=satellite, mod=mod)
+            elif satellite.startswith("R"):
+                X, Y, Z, clk, Vx, Vy, Vz = glonassPosition(data, startTime, toc)
+            else:
+                X, Y, Z, clk, Vx, Vy, Vz = GPSPosition(data, startTime, toc, prn=satellite)
+            if toc != toc2:
+                if satellite.startswith("C"):
+                    X1, Y1, Z1, clk, Vx, Vy, Vz = DBSPosition(data, startTime, toc, prn=satellite, mod=mod)
+                elif satellite.startswith("R"):
+                    X1, Y1, Z1, clk, Vx, Vy, Vz = glonassPosition(data, startTime, toc)
+                else:
+                    X1, Y1, Z1, clk, Vx, Vy, Vz = GPSPosition(data, startTime, toc, prn=satellite)
+            cdata = cData[satellite][cdataTime]
+            tsv2 = timeSub(startTime, cdataTime)
+            clk_repair = clk + ((cdata["DeltaClockC0"] + cdata["DeltaClockC1"] / 1000 * tsv2 + cdata[
+                "DeltaClockC2"] / 1000 * pow(
+                tsv2, 2)) / c)
+            if satellite not in sData:
+                if log:
+                    logLines.append("{prn} not in ssr,skip\n".format(prn=satellite))
+                continue
+            if not sdataTime:
+                if log:
+                    logLines.append("{prn} IOD mismatch\n".format(prn=satellite))
+                continue
+            sdata = sData[satellite][sdataTime]
+            if log:
+                logLines.append("{prn} {startTime} NavTime:{toc} ssrOrbTime:{sTime} ssrClkTime:{cTime}\n".format(prn=satellite,
+                                                                                            startTime=startTime,
+                                                                                            toc=toc,
+                                                                                            sTime=sdataTime,
+                                                                                            cTime=cdataTime))
+            tsv = timeSub(startTime, sdataTime)
+            DeltaOrbitRadial = sdata["DeltaOrbitRadial"]
+            DeltaOrbitAlongTrack = sdata["DeltaOrbitAlongTrack"]
+            DeltaOrbitCrossTrack = sdata["DeltaOrbitCrossTrack"]
+            DotOrbitDeltaRadial = sdata["DotOrbitDeltaRadial"] / 1000
+            DotOrbitDeltaAlongTrack = sdata["DotOrbitDeltaAlongTrack"] / 1000
+            DotOrbitDeltaCrossTrack = sdata["DotOrbitDeltaCrossTrack"] / 1000
+            DeltaO = np.array([[DeltaOrbitRadial], [DeltaOrbitAlongTrack], [DeltaOrbitCrossTrack]]) + np.array(
+                [[DotOrbitDeltaRadial], [DotOrbitDeltaAlongTrack], [DotOrbitDeltaCrossTrack]]) * tsv
+            rX = np.array([[X], [Y], [Z]])
+            rDot = np.array([[Vx], [Vy], [Vz]])
+            e_along = rDot / np.linalg.norm(rDot)
+            e_cross = np.cross(rX.T, rDot.T).T / (np.linalg.norm(np.cross(rX.T, rDot.T).T))
+            e_radial = np.cross(e_along.T, e_cross.T).T
+            DeltaX = np.zeros((3, 3))
+            DeltaX[0][0] = e_radial[0]
+            DeltaX[1][0] = e_radial[1]
+            DeltaX[2][0] = e_radial[2]
+            DeltaX[0][1] = e_along[0]
+            DeltaX[1][1] = e_along[1]
+            DeltaX[2][1] = e_along[2]
+            DeltaX[0][2] = e_cross[0]
+            DeltaX[1][2] = e_cross[1]
+            DeltaX[2][2] = e_cross[2]
+            X_reapir = rX - DeltaX @ DeltaO
+            if atxData:
+                if atxData.get(satellite, -1) != -1:
+                    neuList1 = None
+                    neuList2 = None
+                    for atxdata in atxData[satellite]:
+                        validFROM = atxdata["validFROM"]
+                        validUNTIL = atxdata["validUNTIL"]
+                        frequencyData = atxdata["frequencyData"]
+                        if timeDiff(validUNTIL, startTime) > 0:
+                            if satellite[0] == "G":
+                                frequency1 = "G01"
+                                frequency2 = "G02"
+                                frq = [1, 2]
+                            elif satellite[0] == "E":
+                                frequency1 = "E01"
+                                frequency2 = "E05"
+                                frq = [1, 5]
+                            elif satellite[0] == "R":
+                                frequency1 = "R01"
+                                frequency2 = "R02"
+                                frq = [1, 2]
+                            elif satellite[0] == "C":
+                                frequency1 = "C02"
+                                frequency2 = "C07"
+                                frq = [2, 7]
+                            if frequencyData.get(frequency1, -1) == -1 or frequencyData.get(frequency2, -1) == -1:
+                                continue
+                            neuList1 = frequencyData[frequency1]
+                            neuList2 = frequencyData[frequency2]
+                    if neuList1 != None:
+                        dx, dy, dz = satposs(satellite, startTime, rX.T[0], neuList1, neuList2, frq)
+                        X_reapir[0][0] -= dx
+                        X_reapir[1][0] -= dy
+                        X_reapir[2][0] -= dz
+            if satellite not in satellites:
+                satellites.append(satellite)
+            linesTemp.append("P{PRN:3} {X:>13} {Y:>13} {Z:>13} {clk:>13}\n".format(PRN=satellite,
+                                                                               X="{:.6f}".format(X_reapir[0][0] / 1000),
+                                                                               Y="{:.6f}".format(X_reapir[1][0] / 1000),
+                                                                               Z="{:.6f}".format(X_reapir[2][0] / 1000),
+                                                                               clk="{:.6f}".format(
+                                                                                   clk_repair * pow(10, 6))))
+        linesTemp = sorted(linesTemp)
+        for line in linesTemp:
+            lines.append(line)
+        epoch += 1
+        startTime += timedelta(seconds=5 * 60)
+    return lines, outTime, satellites, epoch, logLines
+
 
 def sp3Lines(rnxData, times, cData, sData, atxData=None, mod=False, log=False):
+    return sp3Lines_sorted(rnxData, times, cData, sData, atxData=None, mod=False, log=False)
     mintime = min(times)
     lines = []
     logLines = []
@@ -508,7 +720,98 @@ def sp3Lines(rnxData, times, cData, sData, atxData=None, mod=False, log=False):
         startTime += timedelta(seconds=5 * 60)
     return lines, outTime, satellites, epoch, logLines
 
+def clkLines_sorted(rnxData, times, cData, mod=False, log=False):
+    mintime = min(times)
+    startTime = datetime.datetime(1980, 1, 6)
+    while startTime < mintime:
+        startTime += datetime.timedelta(seconds=86400)
+    ansTime = startTime
+    lines = []
+    logLines = []
+    dataKeys = {}
+    hasCdata = {}
+    for satellite in rnxData:
+        dataKeys[satellite] = sorted(list(rnxData[satellite].keys()))
+        if not cData.get(satellite, None):
+            continue
+        hasCdata[satellite] = sorted(list(cData[satellite].keys()))
+    for _ in range(24 * 60 * 2):  # 24小时,每30秒
+        print(startTime)
+        if log:
+            logLines.append("> {year:4} {month:2} {day:2} {hour:2} {minute:2} {second:>11}\n".format(
+                year=startTime.year,
+                month=startTime.month,
+                day=startTime.day,
+                hour=startTime.hour,
+                minute=startTime.minute,
+                second="{:.8f}".format(startTime.second),
+            ))
+        for satellite in rnxData:
+            timeDifftoc = 0
+            if satellite.startswith("E"):
+                timeDifftoc = 60 * 60 * 6
+            else:
+                timeDifftoc = 60 * 60 * 6
+            tt = time.time()
+            keys = dataKeys[satellite]
+            for index in range(len(keys)):
+                if keys[index] >= startTime:
+                    break
+            toc = keys[index]
+            if satellite not in cData:
+                if log:
+                    logLines.append("{prn} not in ssr,skip\n".format(prn=satellite))
+                continue
+            toc, cdataTime = selectToc_sorted(cData[satellite], rnxData[satellite], startTime, hasCdata[satellite], satellite)
+            if not toc:
+                if log:
+                    logLines.append("{prn} not toc,skip\n".format(prn=satellite))
+                continue
+            if abs(timeSub(startTime, toc)) > timeDifftoc:
+                if log:
+                    logLines.append("{prn} startTime and toc diff too big,skip\n".format(prn=satellite))
+                continue
+            if satellite not in cData:
+                if log:
+                    logLines.append("{prn} not in ssr,skip\n".format(prn=satellite))
+                continue
+            tt = time.time()
+            data = rnxData[satellite][toc]
+            if satellite.startswith("C"):
+                X, Y, Z, clk, Vx, Vy, Vz = DBSPosition(data, startTime, toc, prn=satellite, mod=mod)
+            elif satellite.startswith("R"):
+                X, Y, Z, clk, Vx, Vy, Vz = glonassPosition(data, startTime, toc)
+            else:
+                X, Y, Z, clk, Vx, Vy, Vz = GPSPosition(data, startTime, toc, prn=satellite)
+            if not cdataTime:
+                if log:
+                    logLines.append("{prn} IOD mismatch\n".format(prn=satellite))
+                continue
+            if log:
+                logLines.append("{prn} {startTime} NavTime:{toc} ssrClkTime:{cTime}\n".format(prn=satellite,
+                                                                                            startTime=startTime,
+                                                                                            toc=toc,
+                                                                                            cTime=cdataTime))
+            cdata = cData[satellite][cdataTime]
+            tsv2 = timeSub(startTime, cdataTime)
+            clk_repair = clk + ((cdata["DeltaClockC0"] + cdata["DeltaClockC1"] / 1000 * tsv2 + cdata[
+                "DeltaClockC2"] / 1000 * pow(
+                tsv2, 2)) / c)
+            lines.append(
+                "AS {PRN:3}  {year:>4} {month:>2} {day:>2} {hour:>2} {minute:>2} {second:>9}  1   {clk:>19}\n".format(
+                    PRN=satellite,
+                    year=startTime.year,
+                    month=startTime.month,
+                    day=startTime.day,
+                    hour=startTime.hour,
+                    minute=startTime.minute,
+                    second="{:.6f}".format(startTime.second),
+                    clk="{:.12e}".format(clk_repair)))
+        startTime += timedelta(seconds=30)
+    return lines, ansTime, logLines
+
 def clkLines(rnxData, times, cData, mod=False, log=False):
+    return clkLines_sorted(rnxData, times, cData, mod=False, log=False)
     mintime = min(times)
     startTime = datetime.datetime(1980, 1, 6)
     while startTime < mintime:
@@ -603,7 +906,8 @@ def clkLines(rnxData, times, cData, mod=False, log=False):
         startTime += timedelta(seconds=30)
     return lines, ansTime, logLines
 
-def repairSp3(outPath ,navPath, ssrPath, atxPath=None):
+
+def repairSp3(outPath, navPath, ssrPath, atxPath=None):
     for nav in navPath:
         assert os.path.isfile(nav), "not nav path"
     assert os.path.isfile(ssrPath), "not ssr path"
