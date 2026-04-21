@@ -155,3 +155,17 @@ This feature is implemented in the **"integrity"** window, the input and output 
 #### **Instructions for use**
 
 - Users need to enter the SP3 or SSR file, specify the time interval of the file, and the software will output the Gantt chart of the completeness rate and the completeness rate statistics to the folder specified in the **"img path"** input box.
+
+## Command Line Arguments (CLI Mode with `-nw`)
+
+| Argument | Description | Value |
+|----------|-------------|-------|
+| `-nav` | Broadcast ephemeris file path (RINEX navigation file) | File path |
+| `-ssr` | SSR correction file path (BNC format) | File path |
+| `-atx` | ANTEX antenna phase center correction file | File path |
+| `-sp3` | SP3 precise orbit file path (use twice for comparison) | File path |
+| `-out` | Output file path (extension `.sp3` or `.clk` determines output type) | File path |
+| `-plot_out` | Output image path for precision analysis plots | File path |
+| `-plot_sys` | Satellite systems to analyze (comma-separated) | `G`, `R`, `E`, `C` |
+| `-plt_check` | Components to compare (comma-separated) | `X`, `Y`, `Z`, `R`, `A`, `C`, `CLK` |
+| `-nw` | Enable command line mode (no GUI) | No value |

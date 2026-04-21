@@ -412,9 +412,9 @@ def sp3Lines_sorted(rnxData, times, cData, sData, atxData=None, mod=False, log=F
                 if log:
                     logLines.append("{prn} not in ssr,skip\n".format(prn=satellite))
                 continue
-            toc, cdataTime = selectToc_sorted(sData[satellite], rnxData[satellite], startTime,
+            toc, cdataTime = selectToc_sorted(cData[satellite], rnxData[satellite], startTime,
                                               hasSdata[satellite], satellite)
-            toc2, sdataTime = selectToc_sorted(cData[satellite], rnxData[satellite], startTime,
+            toc2, sdataTime = selectToc_sorted(sData[satellite], rnxData[satellite], startTime,
                                                hasCdata[satellite], satellite)
             if not toc:
                 if log:
