@@ -304,11 +304,11 @@ def readNav(path, rnxData=None):
                                             second=second + 18)
                 else:
                     toc = gnssTime.gnssTime(year=year, month=month, day=day, hour=hour, minute=minute, second=second)
-                if "E" in PRN and (not (dataSource & 0b100000000)):
-                    if dataSource == 0:
-                        pass
-                    else:
-                        continue
+                # if "E" in PRN and (not (dataSource & 0b100000000)):
+                #     if dataSource == 0:
+                #         pass
+                #     else:
+                #         continue
                 if toc not in times:
                     times.append(toc)
                 if rnxData.get(PRN, -1) == -1:

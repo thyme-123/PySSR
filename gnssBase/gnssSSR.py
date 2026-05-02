@@ -534,7 +534,7 @@ def sp3Lines_sorted(rnxData, times, cData, sData, atxData=None, mod=False, log=F
 
 
 def sp3Lines(rnxData, times, cData, sData, atxData=None, mod=False, log=False):
-    # return sp3Lines_sorted(rnxData, times, cData, sData, atxData=None, mod=False, log=False)
+    return sp3Lines_sorted(rnxData, times, cData, sData, atxData=None, mod=False, log=False)
     mintime = min(times)
     lines = []
     logLines = []
@@ -811,7 +811,7 @@ def clkLines_sorted(rnxData, times, cData, mod=False, log=False):
     return lines, ansTime, logLines
 
 def clkLines(rnxData, times, cData, mod=False, log=False):
-    # return clkLines_sorted(rnxData, times, cData, mod=False, log=False)
+    return clkLines_sorted(rnxData, times, cData, mod=False, log=False)
     mintime = min(times)
     startTime = datetime.datetime(1980, 1, 6)
     while startTime < mintime:
